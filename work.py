@@ -1,9 +1,29 @@
 import random
 import tkinter
+from threading import Thread
+from time import sleep
+
+
+def multitask():
+    t1 = Thread(target=time_stop)
+    t1.start()
+
+
+def time_stop():
+    global time_go, c
+    time_go = False
+    for i in range(c):
+        time_stop_but.config(text=f"Оставшееся время: {c} секунд!")
+        c -= 1
+        sleep(1)
+    time_stop_but.config(text="Время возобновило свой ход")
+    time_stop_but.pack()
+    time_go = True
 
 
 def prepare_and_start():
-    global player, exit, fires, enemies, player_pos
+    global player, exit, fires, enemies, player_pos, c
+    c = 3
     obj_pos = []
     canvas.delete("all")
     player_pos = (random.randint(0, N_X - 1) * step,
@@ -54,7 +74,6 @@ def random_move(enemy):
         ret[1] = canvas.coords(enemy)[1] - step
     elif s[1] > 0:
         ret[1] = canvas.coords(enemy)[1] + step
-    print(ret)
     return ret
 
 
@@ -99,32 +118,36 @@ def key_pressed(event):
         canvas.move(player, -step, 0)
     elif event.keysym == 'Right':
         canvas.move(player, step, 0)
-    for enemy in enemies:
-        direction = random_move(
-            enemy)  # вызвать функцию перемещения у "врага"
-        canvas.coords(enemy, direction[0], direction[1])
-        move_wrap(enemy,
-                  canvas.coords(enemy))  # произвести  перемещение
+    if time_go:
+        for enemy in enemies:
+            direction = random_move(
+                enemy)  # вызвать функцию перемещения у "врага"
+            canvas.coords(enemy, direction[0], direction[1])
+            move_wrap(enemy,
+                      canvas.coords(enemy))  # произвести  перемещение
     move_wrap(player, canvas.coords(player))
     check_move()
 
 
+c = 3
 step = 60  # Размер клетки
 N_X = 10
-N_Y = 10  # Размер сетки
+N_Y = 10
+time_go = True  # Размер сетки
 master = tkinter.Tk()
 player_pic = tkinter.PhotoImage(file="images/player.png")
 exit_pic = tkinter.PhotoImage(file="images/exit.png")
 fire_pic = tkinter.PhotoImage(file="images/fire.png")
 enemy_pic = tkinter.PhotoImage(file="images/enemy.png")
 label = tkinter.Label(master, text="Найди выход")
-
 canvas = tkinter.Canvas(master, bg='cyan',
                         height=N_X * step, width=N_Y * step)
 canvas.pack()
 restart = tkinter.Button(master, text="Начать заново",
                          command=prepare_and_start)
-
+time_stop_but = tkinter.Button(master, text="Остановка времени",
+                               command=multitask)
+time_stop_but.pack()
 prepare_and_start()
 restart.pack()
 label.pack()
